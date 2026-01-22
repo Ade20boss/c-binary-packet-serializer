@@ -2,6 +2,11 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <time.h>
+#ifdef _WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
 
 #define LATEST_VERSION 1
 
@@ -97,8 +102,8 @@ int main() {
     // Seed the random number generator
     srand(time(NULL));
 
-    // Generate a random number of orders between 1 and 20
-    int num_of_orders = (rand() % 20) + 1;
+    // Generate a random number of orders between 1 and 50
+    int num_of_orders = (rand() % 50) + 1;
     
     // Allocate a buffer large enough to hold the header and the orders
     // Note: This uses a Variable Length Array (VLA)
@@ -108,19 +113,36 @@ int main() {
     char buffer[size]; // The raw byte buffer simulating a network packet
 
     // Populate the order array with random dummy data
-    for (int i = 0; i < num_of_orders; i++){
-        my_orders[i].id = i + 1;
-        my_orders[i].Price = (rand() % 1000);
-        my_orders[i].Quantity = (rand() % 50);
-    }
+
+    while(1){
+        for (int i = 0; i < num_of_orders; i++){
+            my_orders[i].id = i + 1;
+            my_orders[i].Price = (rand() % 1000);
+            my_orders[i].Quantity = (rand() % 50);
+        }
     
     // Serialize the structured data into the raw buffer
-    int total_bytes = serialize_orders(buffer, sizeof(buffer), my_orders, num_of_orders, 1);
+        int total_bytes = serialize_orders(buffer, sizeof(buffer), my_orders, num_of_orders, 1);
 
 
-    printf("Total Bytes Written: %d (Expected: %d)\n", total_bytes, (sizeof(PacketHeader) + (num_of_orders * sizeof(Order))));
+        printf("Total Bytes Written: %d (Expected: %d)\n", total_bytes, (sizeof(PacketHeader) + (num_of_orders * sizeof(Order))));
 
-    parse_packet(buffer);
+
+
+    //Desrialize the data from the raw buffer into structured data 
+        parse_packet(buffer);
+
+        printf("Waiting for next batch...\n");
+    
+        #ifdef _WIN32
+        Sleep(500); // 1000 milliseconds
+        #else
+        sleep(0.5);    // 1 second
+        #endif
+
+    }
+
+
     return 0; 
 
 }
